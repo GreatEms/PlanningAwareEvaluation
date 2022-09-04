@@ -52,8 +52,15 @@ def get_sensitivities_at_time(env: NuScenesEnvironment,
     scene_offset = features[11:13]
 
     prediction_gmms = gmm_dict.values()
-    pred_mus = torch.stack([gmm.mus.squeeze() + scene_offset for gmm in prediction_gmms])
-    pred_probs = torch.stack([gmm.pis_cat_dist.probs.squeeze()[0] for gmm in prediction_gmms])
+    # for item in prediction_gmms:
+    #     print(item.mus.shape)
+    #     print(item.pis_cat_dist.probs.shape)
+    pred_mus = torch.stack([gmm.mus.squeeze(0)[0] + scene_offset for gmm in prediction_gmms])
+    pred_probs = torch.stack([gmm.pis_cat_dist.probs.squeeze(0)[0] for gmm in prediction_gmms])
+
+    # horizon > 1 , chooise first
+    if len(pred_probs.shape) == 3:
+        pred_probs = pred_probs[:,0,:]
 
     prediction_sensitivities = env.get_sensitivities(torch.from_numpy(learned_theta), 
                                                         ego_x[scene_t - init_timestep], 
@@ -171,8 +178,11 @@ def predictions_and_sensitivities(env: NuScenesEnvironment,
     # Plotting Predictions #
     ########################
     if ret_pred_fig:
+        # ns_scene_name = "scene-{:>04d}".format(int(env.env.scenes[ep].name))
+        # ns_scene = env.nusc.get('scene', env.nusc.field2token('scene', 'name', ns_scene_name)[0])
+
         fig, ax = plot_map(dataroot=env.data_root,
-                           map_name=env.helper.get_map_name_from_sample_token(env.env.scenes[ep].name), 
+                           map_name=env.helper.get_map_name_from_sample_token(env.env.scenes[ep].name),
                            map_patch=(ego_x[:ep_len, 0].min() - 50, 
                                       ego_x[:ep_len, 1].min() - 50, 
                                       ego_x[:ep_len, 0].max() + 50, 

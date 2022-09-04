@@ -102,7 +102,8 @@ def main(args):
                              )
 
     expert_x, expert_u, extra_info = env.gen_expert_data(num_samples=args.num_trajs,
-                                                         prediction_model_dir='./Trajectron-plus-plus/experiments/nuScenes/models/nuScenes_og_node_freqs-13_Aug_2021_11_52_51',
+                                                         # prediction_model_dir='./Trajectron-plus-plus/experiments/nuScenes/models/nuScenes_og_node_freqs-13_Aug_2021_11_52_51',
+                                                         prediction_model_dir= "Trajectron-plus-plus/experiments/nuScenes/models/int_ee_me",
                                                          prediction_model_ckpt=12,
                                                          pred_horizon=args.ph,
                                                          use_pred_uncertainty=args.full_pred_dist,

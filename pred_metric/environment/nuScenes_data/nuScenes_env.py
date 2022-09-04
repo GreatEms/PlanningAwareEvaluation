@@ -176,11 +176,12 @@ class NuScenesEnvironment(UnicycleEnvironment):
         if len(present_nodes) > 0:
             with torch.no_grad():
                 obs_pred_dists, _ = pred_model.predict(scene, timestep_np, pred_horizon, output_dists=True)
+                # obs_pred_dists = pred_model.predict(scene, timestep_np, pred_horizon)
             
             gmm_dict = obs_pred_dists[timestep]
             del gmm_dict[scene.robot]
 
-            probabilities = torch.stack([gmm.pis_cat_dist.probs.squeeze()[0]
+            probabilities = torch.stack([gmm.pis_cat_dist.probs.squeeze(0)[0]
                                             for gmm in gmm_dict.values()])
 
             return gmm_dict, probabilities
@@ -196,6 +197,7 @@ class NuScenesEnvironment(UnicycleEnvironment):
                         pred_horizon: int,
                         return_features: bool = True):
         scene_offset = np.array([scene.x_min, scene.y_min, 0])
+        # scene_offset = np.array([0, 0, 0])
 
         ego_state = scene.robot.get(np.array([t]), unicycle_state_dict)[0]
         ego_state_global = ego_state + scene_offset
@@ -527,6 +529,7 @@ class NuScenesEnvironment(UnicycleEnvironment):
                           phi * torch.ones_like(a),
                           v + a * dt], dim=-1)
 
+
         next_states = torch.where(~mask.unsqueeze(-1), d1, d2)
         if ret_np:
             return next_states.numpy()
@@ -669,6 +672,11 @@ class NuScenesEnvironment(UnicycleEnvironment):
                 # Want to have at least two state vectors (=> at least 1 action vector)
                 continue
 
+            # a = self.helper.data.sample
+            # print(self.helper.data.get('sample'))
+            # ns_scene_name = "scene-{:>04d}".format(int(scene.name))
+            # ns_scene = self.nusc.get('scene', self.nusc.field2token('scene', 'name', ns_scene_name)[0])
+
             nusc_map = NuScenesMap(dataroot=self.data_root, map_name=self.helper.get_map_name_from_sample_token(scene.name))
             last_ego_state = scene.robot.get(np.array([scene.timesteps-1]), unicycle_state_dict)[0]
 
@@ -679,12 +687,12 @@ class NuScenesEnvironment(UnicycleEnvironment):
             scene_pred_probs = dict()
             for timestep in range(initial_timestep, initial_timestep + self.num_timesteps):
                 action = self.get_actions(scene, np.array([timestep]))[0]
-                try:
-                    obs, features, predictions, probabilities = self.get_observation(scene, timestep, nusc_map, last_ego_state, pred_model,
+                # try:
+                obs, features, predictions, probabilities = self.get_observation(scene, timestep, nusc_map, last_ego_state, pred_model,
                                                                                         pred_horizon=pred_horizon)
-                except ValueError:
-                    skip = True
-                    break
+                # except ValueError:
+                #     skip = True
+                #     break
 
                 visited_states.append(obs)
                 obs_features.append(features)
@@ -695,6 +703,7 @@ class NuScenesEnvironment(UnicycleEnvironment):
                     break
 
             if skip:
+                print("skiping ", ns_scene_name)
                 continue
             
             visited_states_np = np.array(visited_states)

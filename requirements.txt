@@ -14,7 +14,7 @@ pathos==0.2.7
 tqdm==4.53.0
 notebook==6.2.0
 scikit-learn==0.24.1
-nuscenes-devkit==1.1.5
+nuscenes-devkit
 pykalman==0.9.5
 cvxpy==1.1.13
 # You will likely need to source deactivate and activate
