@@ -357,7 +357,7 @@ def eval_preds_reweighted(env: NuScenesEnvironment,
         scene_offset = features[11:13]
 
         prediction_gmms = gmm_dict.values()
-        pred_mus = torch.stack([gmm.mus.squeeze() + scene_offset for gmm in prediction_gmms])
+        pred_mus = torch.stack([gmm.mus.squeeze() + scene_offset for gmm in prediction_gmms]).unsqueeze(1)
         pred_probs = torch.stack([gmm.pis_cat_dist.probs.squeeze()[0] for gmm in prediction_gmms])
 
         prediction_sensitivities = env.get_sensitivities(torch.from_numpy(learned_theta), 
