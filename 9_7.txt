@@ -1,0 +1,67 @@
+[1] Ibarz J., Tan J. and Finn C, "How to train your robot with deep reinforcement learning: lessons we have learned," The International Journal of Robotics Research, 698-721 (2021).
+[2] Bachute M. R. and Subhedar J. M. "Autonomous driving architectures: insights of machine learning and deep learning algorithms," Machine Learning with Applications,  6: 100164 (2021).
+[3] Shani L., Zahavy T. and Mannor S., "Online apprenticeship learning," Proceedings of the AAAI Conference on Artificial Intelligence, 36(8): 8240-8248 (2022) .
+[6] Zhou D., Gu Q. and Szepesvari C., "Nearly minimax optimal reinforcement learning for linear mixture markov decision processes," Conference on Learning Theory,4532-4576 (2021).
+[7] Arora S. and Doshi P., "A survey of inverse reinforcement learning: Challenges, methods and progress," Artificial Intelligence, 297: 103500 (2021).
+[9] Bashir E. and Luštrek M., "Inverse Reinforcement Learning Through Max-Margin Algorithm," Intelligent Environments 2021: Workshop Proceedings of the 17th International Conference on Intelligent Environments, 29: 190 (2021).
+[10] Bogert K., Gui Y. and Doshi P., "IRL with Partial Observations using the Principle of Uncertain Maximum Entropy," arXiv preprint arXiv:2208.06988 (2022).
+[11] Mehr N., Wang M. and Schwager M., "Maximum-Entropy Multi-Agent Dynamic Games: Forward and Inverse Solutions," arXiv preprint arXiv:2110.01027 (2021).
+[12] Qu B., Zhao M. and Feng J., "ASRL: An Adaptive GPS Sampling Method Using Deep Reinforcement Learning," 2022 23rd IEEE International Conference on Mobile Data Management (MDM), 153-158 (2022).
+
+[14] Nasernejad P., Sayed T. and Alsaleh R., "Modeling pedestrian behavior in pedestrian-vehicle near misses: A continuous Gaussian Process Inverse Reinforcement Learning (GP-IRL) approach," Accident Analysis & Prevention, 161: 106355 (2021) .
+
+构造环境：
+    env = GCAEnvironment(env_name='collision_avoidance',
+                         state_dim=7, 
+                         control_dim=2, 
+                         num_timesteps=50, 
+                         dt=0.1, 
+                         gt_theta=np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32))
+optimizer = optim.LBFGS([theta], lr=0.9)
+
+观测的七维状态，分别是位置的x,y坐标，heading，与障碍物之间的距离，一个时间步长预测的障碍物距离
+    def _make_observation(self, state):
+        #                   x         y        cos(heading)      sin(heading)     distance to obstacle (x and y)  distance to predicted obstacle (x and y)
+        return np.array([state[0], state[1], np.cos(state[2]), np.sin(state[2]), state[3], state[4], state[5], state[6]])
+
+输出结果：
+learned_theta = torch.tensor([1.214, 4.188, 0.366, 0.352]) 
+
+
+        # This form works and gives values like: [2.508, 4.607, 1.097], slack variable: 1e-07
+        reward_terms = torch.stack([-torch.square(x_reshaped[..., :2]).sum((-1, -2)),
+                                    -torch.square(u_reshaped).sum((-1, -2)),
+                                    -utils.rbf(x_reshaped[..., -4:-2], scale=0.05).sum(-1),
+                                    -utils.rbf(x_reshaped[..., -2:], scale=0.05).sum(-1)],
+                                   dim=-1)
+
+不同的奖励函数输出不同的系数，可做表格
+        # Only penalizing velocity, gives less-good values: [0.775, 2.188, 0.336], slack variable: 0.18
+        # reward_terms = torch.stack([-torch.square(x_reshaped[..., :2]).sum((-1, -2)),
+        #                             -torch.square(u_reshaped[..., [0]]).sum((-1, -2)),
+        #                             -utils.rbf(x_reshaped[..., -2:], scale=0.05).sum(-1)],
+        #                            dim=-1)
+
+        # Only penalizing heading delta doesn't converge.
+        # reward_terms = torch.stack([-torch.square(x_reshaped[..., :2]).sum((-1, -2)),
+        #                             -torch.square(u_reshaped[..., [1]]).sum((-1, -2)),
+        #                             -utils.rbf(x_reshaped[..., -2:], scale=0.05).sum(-1)],
+        #                            dim=-1)
+
+        # No control cost doesn't converge (gets [0.345, 0.085] @ slack 0.25 after 20 iterations), but
+        # has some chance at the best NLL, maybe that's worth keeping around?
+        # This one is hard to optimize... might not be worth it.
+        # reward_terms = torch.stack([-torch.square(x_reshaped[..., :2]).sum((-1, -2)),
+        #                             -utils.rbf(x_reshaped[..., -2:], scale=0.05).sum(-1)],
+        #                            dim=-1)
+
+        # GA3C-CADRL reward function, not fantastic either.
+        # dist_to_obs = torch.linalg.norm(x_reshaped[..., -2:], dim=-1)
+        # goal_reward = torch.where(torch.linalg.norm(x_reshaped[..., :2], dim=-1) <= 0.15, 1.0, 0.0).sum(-1)
+        # collision_reward = torch.where(dist_to_obs <= 0.1, -0.25, 0.0).sum(-1)
+        # near_reward = torch.where(torch.logical_and(0.1 < dist_to_obs, dist_to_obs <= 0.2), 
+        #                           -0.1 + 0.05 * dist_to_obs/2, 
+        #                           torch.tensor(0.0)).sum(-1)
+        # reward_terms = torch.stack([goal_reward, collision_reward, near_reward], dim=-1)
+        
+        # combined_reward = (reward_terms @ torch.exp(theta))
