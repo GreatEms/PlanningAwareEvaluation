@@ -450,12 +450,12 @@ class UnicycleEnvironment(Environment):
         ll_val = 0.0
         for batch in range(batch_size):
             indexed_extra_info = utils.index_dict(extra_info, batch)
-            x_proper, u_proper = self._ensure_length(x[batch], u[batch], indexed_extra_info)
+            x_proper, u_proper = self._ensure_length(x[batch], u[batch], indexed_extra_info)   # ONLY UESED extra[ep_length]
 
             g_hat, g_tilde = self._run_single_jacobian(x_proper, u_proper, theta, 
                                                        extra_info=indexed_extra_info)
 
-            A_batch = self.calc_A(x[batch], u[batch], indexed_extra_info)
+            A_batch = self.calc_A(x[batch], u[batch], indexed_extra_info)  # ONLY UESED extra[ep_length]
             B_batch = self.calc_B(x[batch], u[batch], indexed_extra_info)
             J = self._form_J(A_batch[0], B_batch[0, :-1], indexed_extra_info, print=False)
 

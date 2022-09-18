@@ -181,7 +181,7 @@ class NuScenesEnvironment(UnicycleEnvironment):
             gmm_dict = obs_pred_dists[timestep]
             del gmm_dict[scene.robot]
 
-            probabilities = torch.stack([gmm.pis_cat_dist.probs.squeeze(0)[0]
+            probabilities = torch.stack([gmm.pis_cat_dist.probs.squeeze()[0]
                                             for gmm in gmm_dict.values()])
 
             return gmm_dict, probabilities

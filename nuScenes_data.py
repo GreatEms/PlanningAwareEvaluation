@@ -162,7 +162,7 @@ def main(args):
         analysis.evaluate_learned_theta(env, learned_theta, extra_info, plot=True, verbose=False, prefix=('det' if gt_theta_dim == 5 else 'pred'))
 
     if args.nice_pred_plots:
-        for ep in tqdm([4, 14, 17, 25]): # trange(extra_info['scene_idxs'].shape[0], desc='Scenes', position=0):
+        for ep in tqdm([0]): # trange(extra_info['scene_idxs'].shape[0], desc='Scenes', position=0):
             ep_len = extra_info['ep_lengths'][ep] + 1
 
             figs = list()
@@ -269,7 +269,7 @@ def main(args):
     if args.noise_dets:
         Path(f'plots/nuScenes/{env.env_name}_noisy_dets').mkdir(parents=True, exist_ok=True)
         noise_mags = np.linspace(0.0, 4.0, num=9).tolist()
-        num_workers = 5
+        num_workers = 1
 
         for ep in trange(len(extra_info['predictions']), desc='Removing GMM Objects'):
             # Doing this otherwise the following does not work (GMM objects can't be pickled, I guess).
@@ -278,23 +278,29 @@ def main(args):
                 for node in extra_info['predictions'][ep][time]:
                     extra_info['predictions'][ep][time][node] = None
         
-        with Pool(num_workers) as pool:
-            list(
-                tqdm(
-                    pool.imap(
-                        partial(parallel_noisy_dets,
-                                env=env,
-                                learned_theta=learned_theta,
-                                expert_x=expert_x,
-                                extra_info=extra_info),
-                        list(enumerate(noise_mags))
-                    ),
-                    desc=f'Processing Noisy Dets ({num_workers} CPUs)',
-                    total=len(noise_mags),
-                    position=0,
-                    disable=True
-                )
-            )
+        # with Pool(num_workers) as pool:
+        #     list(
+        #         tqdm(
+        #             pool.imap(
+        #                 partial(parallel_noisy_dets,
+        #                         env=env,
+        #                         learned_theta=learned_theta,
+        #                         expert_x=expert_x,
+        #                         extra_info=extra_info),
+        #                 list(enumerate(noise_mags))
+        #             ),
+        #             desc=f'Processing Noisy Dets ({num_workers} CPUs)',
+        #             total=len(noise_mags),
+        #             position=0,
+        #             disable=True
+        #         )
+        #     )
+
+        # multi threads to single thread
+        for idx, noise_mag in enumerate(noise_mags):
+            parallel_noisy_dets([idx, noise_mag], env, learned_theta, expert_x, extra_info)
+
+
 
 def parallel_noisy_dets(idx_noise_mag: Tuple[int, float], env, learned_theta, expert_x, extra_info):
     idx, noise_mag = idx_noise_mag

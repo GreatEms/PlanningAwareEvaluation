@@ -52,15 +52,18 @@ def get_sensitivities_at_time(env: NuScenesEnvironment,
     scene_offset = features[11:13]
 
     prediction_gmms = gmm_dict.values()
+    pred_mus = torch.stack([gmm.mus.squeeze() + scene_offset for gmm in prediction_gmms])
+    pred_probs = torch.stack([gmm.pis_cat_dist.probs.squeeze()[0] for gmm in prediction_gmms])
     # for item in prediction_gmms:
     #     print(item.mus.shape)
     #     print(item.pis_cat_dist.probs.shape)
-    pred_mus = torch.stack([gmm.mus.squeeze(0)[0] + scene_offset for gmm in prediction_gmms])
-    pred_probs = torch.stack([gmm.pis_cat_dist.probs.squeeze(0)[0] for gmm in prediction_gmms])
+    # pred_mus = torch.stack([gmm.mus.squeeze(0)[0] + scene_offset for gmm in prediction_gmms])
+    # pred_probs = torch.stack([gmm.pis_cat_dist.probs.squeeze(0)[0] for gmm in prediction_gmms])
+    #
+    # # horizon > 1 , chooise first
+    # if len(pred_probs.shape) == 3:
+    #     pred_probs = pred_probs[:,0,:]
 
-    # horizon > 1 , chooise first
-    if len(pred_probs.shape) == 3:
-        pred_probs = pred_probs[:,0,:]
 
     prediction_sensitivities = env.get_sensitivities(torch.from_numpy(learned_theta), 
                                                         ego_x[scene_t - init_timestep], 
@@ -357,7 +360,7 @@ def eval_preds_reweighted(env: NuScenesEnvironment,
         scene_offset = features[11:13]
 
         prediction_gmms = gmm_dict.values()
-        pred_mus = torch.stack([gmm.mus.squeeze() + scene_offset for gmm in prediction_gmms]).unsqueeze(1)
+        pred_mus = torch.stack([gmm.mus.squeeze() + scene_offset for gmm in prediction_gmms])
         pred_probs = torch.stack([gmm.pis_cat_dist.probs.squeeze()[0] for gmm in prediction_gmms])
 
         prediction_sensitivities = env.get_sensitivities(torch.from_numpy(learned_theta), 
